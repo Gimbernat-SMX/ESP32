@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Build helper for ESP32-S3 + Wokwi projects using arduino-cli.
+# It installs arduino-cli (via Homebrew) if missing, installs ESP32 core,
+# and compiles sketch.ino to build/ so wokwi.toml can load it.
+
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SKETCH_FILE="${PROJECT_DIR}/sketch.ino"
+BUILD_DIR="${PROJECT_DIR}/build"
+FQBN="${FQBN:-esp32:esp32:esp32s3}"
+PROJECT_NAME="$(basename "$PROJECT_DIR")"
+
+if [[ ! -f "$SKETCH_FILE" ]]; then
+  echo "Error: no se encontro $SKETCH_FILE"
+  exit 1
+fi
+
+if ! command -v brew >/dev/null 2>&1; then
+  echo "Error: Homebrew no esta instalado. Instala Homebrew primero: https://brew.sh"
+  exit 1
+fi
+
+if ! command -v arduino-cli >/dev/null 2>&1; then
+  echo "arduino-cli no encontrado. Instalando con Homebrew..."
+  brew install arduino-cli
+fi
+
+mkdir -p "$BUILD_DIR"
+
+if ! arduino-cli config dump >/dev/null 2>&1; then
+  echo "Inicializando configuracion de arduino-cli..."
+  arduino-cli config init >/dev/null
+fi
+
+echo "Actualizando indice de placas..."
+arduino-cli core update-index
+
+if ! arduino-cli core list | grep -q "esp32:esp32"; then
+  echo "Instalando core esp32:esp32..."
+  arduino-cli core install esp32:esp32
+else
+  echo "Core esp32:esp32 ya instalado."
+fi
+
+echo "Compilando ${SKETCH_FILE} para ${FQBN}..."
+
+# arduino-cli requires the main .ino filename to match its containing folder.
+TMP_DIR="$(mktemp -d)"
+trap 'rm -rf "$TMP_DIR"' EXIT
+TMP_SKETCH_DIR="${TMP_DIR}/${PROJECT_NAME}"
+mkdir -p "$TMP_SKETCH_DIR"
+cp "$SKETCH_FILE" "${TMP_SKETCH_DIR}/${PROJECT_NAME}.ino"
+
+arduino-cli compile \
+  --fqbn "$FQBN" \
+  --output-dir "$BUILD_DIR" \
+  --export-binaries \
+  "$TMP_SKETCH_DIR"
+
+# Normalize output names to match wokwi.toml defaults in this project.
+if [[ -f "${BUILD_DIR}/${PROJECT_NAME}.ino.bin" ]]; then
+  cp -f "${BUILD_DIR}/${PROJECT_NAME}.ino.bin" "${BUILD_DIR}/sketch.ino.bin"
+fi
+
+if [[ -f "${BUILD_DIR}/${PROJECT_NAME}.ino.elf" ]]; then
+  cp -f "${BUILD_DIR}/${PROJECT_NAME}.ino.elf" "${BUILD_DIR}/sketch.ino.elf"
+fi
+
+echo ""
+echo "Listo. Archivos generados en ${BUILD_DIR}:"
+ls -1 "$BUILD_DIR" | sed 's/^/ - /'
+
+echo ""
+echo "Si usas Wokwi, valida que existan:"
+echo " - build/sketch.ino.bin"
+echo " - build/sketch.ino.elf"
