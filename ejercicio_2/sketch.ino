@@ -9,9 +9,8 @@ const char WIFI_PASSWORD[] PROGMEM = "";
 const char NTFY_URL[]      PROGMEM = "https://ntfy.sh/hct99Q3DhOcNvlzN";
 const char NTFY_PAYLOAD[]  PROGMEM = "¡Hola desde ESP32-S3!";
 
-// FIX ①②: struct mínimo + salida por referencia (elimina RVO ambiguo)
 struct NtfyResponse {
-  String message;   // único campo que se usa realmente
+  String message;
   bool   ok = false;
 };
 
