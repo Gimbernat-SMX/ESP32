@@ -3,8 +3,8 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
-static const String WIFI_NAME = "Wokwi-GUEST";
-static const String WIFI_PASSWORD = "";
+const String WIFI_NAME = "Wokwi-GUEST";
+const String WIFI_PASSWORD = "";
 
 class NtfyResponse {
 public:
@@ -14,14 +14,33 @@ public:
   String event;
   String topic;
   String message;
-  NtfyResponse() : id(""), time(""), expires(0), event(""), topic(""), message("") {}
-  NtfyResponse(String response) {
-    DynamicJsonDocument doc(512);
-    deserializeJson(doc, response);
 
+  static NtfyResponse fromJson(const String& response) {
+    NtfyResponse result;
+    DynamicJsonDocument doc(512);
+
+    if (deserializeJson(doc, response)) {
+      return result;
+    }
+
+    result.loadFromDoc(doc);
+
+    return result;
+  }
+
+  static NtfyResponse addMessage(String message) {
+    NtfyResponse result;
+
+    result.message = message;
+
+    return result;
+  }
+
+private:
+  void loadFromDoc(const JsonDocument& doc) {
     id = doc["id"].as<String>();
     time = doc["time"].as<String>();
-    expires = doc["expires"];
+    expires = doc["expires"].as<int>();
     event = doc["event"].as<String>();
     topic = doc["topic"].as<String>();
     message = doc["message"].as<String>();
@@ -43,7 +62,6 @@ void connectWifi() {
   }
 
   Serial.println("");
-
   Serial.println("Conectado a WiFi");
 }
 
@@ -56,33 +74,29 @@ void setup() {
 }
 
 NtfyResponse requestHttp(String method, String url, String payload = "") {
-  if (url == "") {
-    Serial.println("Debes especificar una URL válida");
-    return NtfyResponse(String("Invalid URL"));
-  }
-
   HTTPClient http;
   http.begin(url);
-  int httpResponseCode;
+
+  int httpResponseCode = 0;
   if (method == "GET") {
     httpResponseCode = http.GET();
   } else if (method == "POST") {
     httpResponseCode = http.POST(payload);
   } else {
     Serial.println("Método HTTP no soportado");
-    return NtfyResponse(String("Unsupported HTTP method"));
+    return NtfyResponse::addMessage("Unsupported HTTP method");
   }
 
   NtfyResponse result = NtfyResponse();
 
-  if (httpResponseCode > 0) {
+  if (httpResponseCode >= 200 && httpResponseCode < 300) {
     String response = http.getString();
 
-    result = NtfyResponse(response);
+    result = NtfyResponse::fromJson(response);
   } else {
     Serial.println("Error en la solicitud HTTP: " + String(httpResponseCode));
 
-    result.message = http.errorToString(httpResponseCode).c_str();
+    result = NtfyResponse::addMessage(http.errorToString(httpResponseCode));
   }
 
   http.end();
