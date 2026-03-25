@@ -1,19 +1,31 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Build helper for ESP32-S3 + Wokwi projects using arduino-cli.
-# It installs arduino-cli (via Homebrew) if missing, installs ESP32 core,
-# and compiles sketch.ino to build/ so wokwi.toml can load it.
+# Shared build helper for ESP32-S3 + Wokwi projects using arduino-cli.
+# Usage: ./compiler.sh ejercicio_1
 
-PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TARGET="${1:-}"
+FQBN="${FQBN:-esp32:esp32:esp32s3}"
+
+if [[ -z "$TARGET" ]]; then
+  echo "Uso: $(basename "$0") <ejercicio_n>"
+  exit 1
+fi
+
+PROJECT_DIR="${ROOT_DIR}/${TARGET}"
 SKETCH_FILE="${PROJECT_DIR}/sketch.ino"
 BUILD_DIR="${PROJECT_DIR}/build"
 BUILD_CACHE_DIR="${BUILD_DIR}/arduino-cli"
-FQBN="${FQBN:-esp32:esp32:esp32s3}"
 PROJECT_NAME="$(basename "$PROJECT_DIR")"
 
+if [[ ! -d "$PROJECT_DIR" ]]; then
+  echo "Error: no existe el directorio ${PROJECT_DIR}"
+  exit 1
+fi
+
 if [[ ! -f "$SKETCH_FILE" ]]; then
-  echo "Error: no se encontro $SKETCH_FILE"
+  echo "Error: no se encontro ${SKETCH_FILE}"
   exit 1
 fi
 

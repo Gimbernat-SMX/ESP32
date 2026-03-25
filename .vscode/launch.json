@@ -5,8 +5,21 @@
             "name": "Ejecutar ejercicio ESP32",
             "type": "node-terminal",
             "request": "launch",
-            "command": "bash \"${workspaceFolder}/.vscode/run_exercise.sh\" launch",
-            "cwd": "${workspaceFolder}"
+            "command": "bash \"${workspaceFolder}/.vscode/run_exercise.sh\" launch \"${input:exercise}\"",
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "Compilar ejercicio ESP32"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "exercise",
+            "type": "pickString",
+            "description": "Selecciona el ejercicio a ejecutar",
+            "options": [
+                "ejercicio_1",
+                "ejercicio_2"
+            ],
+            "default": "ejercicio_1"
         }
     ]
 }

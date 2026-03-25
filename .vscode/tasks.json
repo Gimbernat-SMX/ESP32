@@ -6,8 +6,8 @@
             "type": "shell",
             "command": "bash",
             "args": [
-                "${workspaceFolder}/.vscode/run_exercise.sh",
-                "build"
+                "${workspaceFolder}/compiler.sh",
+                "${input:exercise}"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
@@ -24,6 +24,18 @@
                 "clear": true
             },
             "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "exercise",
+            "type": "pickString",
+            "description": "Selecciona el ejercicio a compilar",
+            "options": [
+                "ejercicio_1",
+                "ejercicio_2"
+            ],
+            "default": "ejercicio_1"
         }
     ]
 }

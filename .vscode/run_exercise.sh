@@ -4,6 +4,7 @@ set -euo pipefail
 WORKSPACE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MODE="${1:-build}"
 TARGET="${2:-}"
+COMPILER_SCRIPT="${WORKSPACE_DIR}/compiler.sh"
 
 exercise_dirs=()
 for dir in "$WORKSPACE_DIR"/ejercicio_*; do
@@ -34,15 +35,16 @@ if [[ -z "$TARGET" ]]; then
 fi
 
 PROJECT_DIR="${WORKSPACE_DIR}/${TARGET}"
-BUILD_SCRIPT="${PROJECT_DIR}/build_wokwi_esp32s3.sh"
 
-if [[ ! -x "$BUILD_SCRIPT" ]]; then
-  echo "No se puede ejecutar ${BUILD_SCRIPT}."
+if [[ ! -x "$COMPILER_SCRIPT" ]]; then
+  echo "No se puede ejecutar ${COMPILER_SCRIPT}."
   echo "Asegurate de que existe y tiene permisos de ejecucion."
   exit 1
 fi
 
-"$BUILD_SCRIPT"
+if [[ "$MODE" == "build" ]]; then
+  "$COMPILER_SCRIPT" "$TARGET"
+fi
 
 if [[ "$MODE" == "launch" ]]; then
   echo ""
