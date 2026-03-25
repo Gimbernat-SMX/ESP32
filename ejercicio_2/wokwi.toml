@@ -1,0 +1,5 @@
+[wokwi]
+version = 1
+# Generate these files first (Arduino: Export Compiled Binary)
+firmware = 'build/sketch.ino.bin'
+elf = 'build/sketch.ino.elf'

@@ -1,0 +1,53 @@
+{
+    "env": {
+        "arduinoEsp32Root": "${env:HOME}/Library/Arduino15/packages/esp32/hardware/esp32/3.3.7",
+        "arduinoEsp32Sdk": "${env:HOME}/Library/Arduino15/packages/esp32/tools/esp32s3-libs/3.3.7",
+        "arduinoEsp32Compiler": "${env:HOME}/Library/Arduino15/packages/esp32/tools/esp-x32/2511/bin/xtensa-esp-elf-g++"
+    },
+    "configurations": [
+        {
+            "name": "ESP32-S3",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${arduinoEsp32Root}/cores/esp32",
+                "${arduinoEsp32Root}/variants/esp32s3",
+                "${arduinoEsp32Root}/libraries/**",
+                "${arduinoEsp32Sdk}/include/**",
+                "${arduinoEsp32Sdk}/dio_opi/include",
+                "${arduinoEsp32Sdk}/dio_qspi/include",
+                "${arduinoEsp32Sdk}/opi_opi/include",
+                "${arduinoEsp32Sdk}/qio_opi/include",
+                "${arduinoEsp32Sdk}/qio_qspi/include",
+                "${arduinoEsp32Compiler}/../../xtensa-esp-elf/include/**",
+                "${arduinoEsp32Compiler}/../../lib/gcc/xtensa-esp-elf/**/include/**"
+            ],
+            "defines": [
+                "ARDUINO=10819",
+                "ARDUINO_ARCH_ESP32",
+                "ARDUINO_ESP32S3_DEV",
+                "ESP32",
+                "ESP32S3"
+            ],
+            "compilerPath": "${arduinoEsp32Compiler}",
+            "cStandard": "c17",
+            "cppStandard": "c++14",
+            "intelliSenseMode": "macos-gcc-arm64",
+            "browse": {
+                "path": [
+                    "${workspaceFolder}",
+                    "${arduinoEsp32Root}/cores/esp32",
+                    "${arduinoEsp32Root}/variants/esp32s3",
+                    "${arduinoEsp32Root}/libraries",
+                    "${arduinoEsp32Sdk}/include",
+                    "${arduinoEsp32Sdk}/dio_opi/include",
+                    "${arduinoEsp32Sdk}/dio_qspi/include",
+                    "${arduinoEsp32Sdk}/opi_opi/include",
+                    "${arduinoEsp32Sdk}/qio_opi/include",
+                    "${arduinoEsp32Sdk}/qio_qspi/include"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            }
+        }
+    ],
+    "version": 4
+}
