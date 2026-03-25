@@ -1,9 +1,32 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <ArduinoJson.h>
 
-const char* WIFI_NAME = "Gimbernat_docencia";
-const char* WIFI_PASSWORD = "";
+static const String WIFI_NAME = "Wokwi-GUEST";
+static const String WIFI_PASSWORD = "";
+
+class NtfyResponse {
+public:
+  String id;
+  String time;
+  int expires;
+  String event;
+  String topic;
+  String message;
+  NtfyResponse() : id(""), time(""), expires(0), event(""), topic(""), message("") {}
+  NtfyResponse(String response) {
+    DynamicJsonDocument doc(512);
+    deserializeJson(doc, response);
+
+    id = doc["id"].as<String>();
+    time = doc["time"].as<String>();
+    expires = doc["expires"];
+    event = doc["event"].as<String>();
+    topic = doc["topic"].as<String>();
+    message = doc["message"].as<String>();
+  }
+};
 
 bool isConnectedWifi() {
   return WiFi.status() == WL_CONNECTED;
@@ -19,7 +42,9 @@ void connectWifi() {
     Serial.print(".");
   }
 
-  Serial.println("\nConectado a WiFi");
+  Serial.println("");
+
+  Serial.println("Conectado a WiFi");
 }
 
 
@@ -30,28 +55,34 @@ void setup() {
   connectWifi();
 }
 
-auto requestHttp(String url) {
+NtfyResponse requestHttp(String method, String url, String payload = "") {
   if (url == "") {
-    Serial.println("URL vacía");
-    return String("URL vacía");
+    Serial.println("Debes especificar una URL válida");
+    return NtfyResponse(String("Invalid URL"));
   }
 
   HTTPClient http;
   http.begin(url);
-  int httpResponseCode = http.GET();
+  int httpResponseCode;
+  if (method == "GET") {
+    httpResponseCode = http.GET();
+  } else if (method == "POST") {
+    httpResponseCode = http.POST(payload);
+  } else {
+    Serial.println("Método HTTP no soportado");
+    return NtfyResponse(String("Unsupported HTTP method"));
+  }
 
-  auto result = String();
+  NtfyResponse result = NtfyResponse();
 
   if (httpResponseCode > 0) {
     String response = http.getString();
-    Serial.println("Respuesta HTTP:");
-    Serial.println(response);
 
-    result = response;
+    result = NtfyResponse(response);
   } else {
-    Serial.println("Error en la solicitud HTTP");
+    Serial.println("Error en la solicitud HTTP: " + String(httpResponseCode));
 
-    result = http.errorToString(httpResponseCode).c_str();
+    result.message = http.errorToString(httpResponseCode).c_str();
   }
 
   http.end();
@@ -60,9 +91,13 @@ auto requestHttp(String url) {
 }
 
 void loop() {
-  delay(10000);
+  if (isConnectedWifi() == true) {
+    Serial.println("Realizando solicitud HTTP...");
+    NtfyResponse response = requestHttp("POST", "https://ntfy.sh/hct99Q3DhOcNvlzN", "¡Hola desde ESP32-S3!");
+    Serial.print("Respuesta HTTP:");
+    Serial.println(response.message);
 
-  if (isConnectedWifi() == false) return;
-
-  Serial.println("Realizando solicitud HTTP...");
+    Serial.println("Esperando 10 segundos para la próxima solicitud...");
+    delay(1000 * 10);
+  }
 }
