@@ -2,13 +2,16 @@
     "env": {
         "arduinoEsp32Root": "${env:HOME}/Library/Arduino15/packages/esp32/hardware/esp32/3.3.7",
         "arduinoEsp32Sdk": "${env:HOME}/Library/Arduino15/packages/esp32/tools/esp32s3-libs/3.3.7",
-        "arduinoEsp32Compiler": "${env:HOME}/Library/Arduino15/packages/esp32/tools/esp-x32/2511/bin/xtensa-esp-elf-g++"
+        "arduinoEsp32Compiler": "${env:HOME}/Library/Arduino15/packages/esp32/tools/esp-x32/2511/bin/xtensa-esp-elf-g++",
+        "arduinoUserLibraries": "${env:HOME}/Documents/Arduino/libraries"
     },
     "configurations": [
         {
             "name": "ESP32-S3",
             "includePath": [
                 "${workspaceFolder}/**",
+                "${arduinoUserLibraries}/**",
+                "${arduinoUserLibraries}/ArduinoJson/src",
                 "${arduinoEsp32Root}/cores/esp32",
                 "${arduinoEsp32Root}/variants/esp32s3",
                 "${arduinoEsp32Root}/libraries/**",
@@ -35,6 +38,8 @@
             "browse": {
                 "path": [
                     "${workspaceFolder}",
+                    "${arduinoUserLibraries}",
+                    "${arduinoUserLibraries}/ArduinoJson/src",
                     "${arduinoEsp32Root}/cores/esp32",
                     "${arduinoEsp32Root}/variants/esp32s3",
                     "${arduinoEsp32Root}/libraries",
