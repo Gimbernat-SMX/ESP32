@@ -104,14 +104,17 @@ NtfyResponse requestHttp(String method, String url, String payload = "") {
   return result;
 }
 
-void loop() {
-  if (isConnectedWifi() == true) {
-    Serial.println("Realizando solicitud HTTP...");
-    NtfyResponse response = requestHttp("POST", "https://ntfy.sh/hct99Q3DhOcNvlzN", "¡Hola desde ESP32-S3!");
-    Serial.print("Respuesta HTTP:");
-    Serial.println(response.message);
+void sendMessage() {
+  Serial.println("Realizando solicitud HTTP...");
 
-    Serial.println("Esperando 10 segundos para la próxima solicitud...");
-    delay(1000 * 10);
-  }
+  NtfyResponse response = requestHttp("POST", "https://ntfy.sh/hct99Q3DhOcNvlzN", "¡Hola desde ESP32-S3!");
+  Serial.print("Respuesta HTTP:");
+  Serial.println(response.message);
+
+  Serial.println("Esperando 10 segundos para la próxima solicitud...");
+  delay(1000 * 10);
+}
+
+void loop() {
+  if (isConnectedWifi() == true) sendMessage();
 }
