@@ -25,9 +25,27 @@ fi
 echo "Selecciona el ejercicio que quieres compilar:"
 select option in "${exercise_dirs[@]}"; do
   if [[ -n "${option:-}" ]]; then
-    "$COMPILER_SCRIPT" "$option"
-    break
+    echo ""
+    echo "Selecciona el modo de compilacion:"
+
+    select build_mode in "Usar Cache" "Sin Cache"; do
+      case "${build_mode:-}" in
+        "Usar Cache")
+          "$COMPILER_SCRIPT" "$option"
+          break 2
+          ;;
+        "Sin Cache")
+          "$COMPILER_SCRIPT" "$option" "--refresh"
+          break 2
+          ;;
+        *)
+          echo "Opcion no valida. Intentalo de nuevo."
+          ;;
+      esac
+    done
   fi
 
-  echo "Opcion no valida. Intentalo de nuevo."
+  if [[ -z "${option:-}" ]]; then
+    echo "Opcion no valida. Intentalo de nuevo."
+  fi
 done
