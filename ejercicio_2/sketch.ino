@@ -3,49 +3,24 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
-const char* WIFI_NAME = "Wokwi-GUEST";
-const char* WIFI_PASSWORD = "";
+// ✅ FIX ①: PROGMEM + F() — literales viven en flash, no en SRAM
+const char WIFI_NAME[]     PROGMEM = "Wokwi-GUEST";
+const char WIFI_PASSWORD[] PROGMEM = "";
+const char NTFY_URL[]      PROGMEM = "https://ntfy.sh/hct99Q3DhOcNvlzN";
+const char NTFY_PAYLOAD[]  PROGMEM = "¡Hola desde ESP32-S3!";
 
-class NtfyResponse {
-public:
-  String id;
-  String time;
-  int expires;
-  String event;
-  String topic;
-  String message;
-
-  static NtfyResponse fromJson(const String& response) {
-    NtfyResponse result;
-    DynamicJsonDocument doc(512);
-
-    if (deserializeJson(doc, response)) {
-      return result;
-    }
-
-    result.loadFromDoc(doc);
-
-    return result;
-  }
-
-  static NtfyResponse addMessage(String message) {
-    NtfyResponse result;
-
-    result.message = message;
-
-    return result;
-  }
-
-private:
-  void loadFromDoc(const JsonDocument& doc) {
-    id = doc["id"].as<String>();
-    time = doc["time"].as<String>();
-    expires = doc["expires"].as<int>();
-    event = doc["event"].as<String>();
-    topic = doc["topic"].as<String>();
-    message = doc["message"].as<String>();
-  }
+// FIX ①②: struct mínimo + salida por referencia (elimina RVO ambiguo)
+struct NtfyResponse {
+  String message;   // único campo que se usa realmente
+  bool   ok = false;
 };
+
+static HTTPClient http;
+
+void parseResponse(const JsonDocument& doc, NtfyResponse& out) {
+  out.message = doc["message"].as<String>();
+  out.ok      = true;
+}
 
 bool isConnectedWifi() {
   return WiFi.status() == WL_CONNECTED;
@@ -53,68 +28,60 @@ bool isConnectedWifi() {
 
 void connectWifi() {
   WiFi.begin(WIFI_NAME, WIFI_PASSWORD);
-
-  Serial.println("Conectando a WiFi...");
-
-  while (isConnectedWifi() == false) {
+  Serial.println(F("Conectando a WiFi..."));
+  while (!isConnectedWifi()) {
     delay(500);
-    Serial.print(".");
+    Serial.print(F("."));
   }
-
-  Serial.println("");
-  Serial.println("Conectado a WiFi");
+  Serial.println();
+  Serial.println(F("Conectado a WiFi"));
 }
 
-
-void setup() {
-  Serial.begin(115200);
-  Serial.println("Hello, ESP32-S3...");
-
-  connectWifi();
-}
-
-NtfyResponse requestHttp(String method, String url, String payload = "") {
-  HTTPClient http;
+void requestHttp(const char* url, const char* payload, NtfyResponse& out) {
   http.begin(url);
+  http.setReuse(true);
+  http.setConnectTimeout(3000);
+  http.setTimeout(5000);
 
-  int httpResponseCode = 0;
-  if (method == "GET") {
-    httpResponseCode = http.GET();
-  } else if (method == "POST") {
-    httpResponseCode = http.POST(payload);
+  int code = http.POST(String(payload));
+
+  if (code >= 200 && code < 300) {
+    StaticJsonDocument<256> doc;
+    WiFiClient* stream = http.getStreamPtr();
+    if (!deserializeJson(doc, *stream)) {
+      parseResponse(doc, out);
+    }
   } else {
-    Serial.println("Método HTTP no soportado");
-    return NtfyResponse::addMessage("Unsupported HTTP method");
-  }
-
-  NtfyResponse result = NtfyResponse();
-
-  if (httpResponseCode >= 200 && httpResponseCode < 300) {
-    String response = http.getString();
-
-    result = NtfyResponse::fromJson(response);
-  } else {
-    Serial.println("Error en la solicitud HTTP: " + String(httpResponseCode));
-
-    result = NtfyResponse::addMessage(http.errorToString(httpResponseCode));
+    Serial.print(F("Error HTTP: "));
+    Serial.println(code);
+    out.message = http.errorToString(code);
   }
 
   http.end();
-
-  return result;
 }
 
+void setup() {
+  Serial.begin(115200);
+  Serial.println(F("Hello, ESP32-S3..."));
+  connectWifi();
+}
+
+static unsigned long lastSend = 0;
+const  unsigned long INTERVAL  = 10000UL;
+
 void sendMessage() {
-  Serial.println("Realizando solicitud HTTP...");
-
-  NtfyResponse response = requestHttp("POST", "https://ntfy.sh/hct99Q3DhOcNvlzN", "¡Hola desde ESP32-S3!");
-  Serial.print("Respuesta HTTP:");
+  Serial.println(F("Realizando solicitud HTTP..."));
+  NtfyResponse response;
+  requestHttp(NTFY_URL, NTFY_PAYLOAD, response);
+  Serial.print(F("Respuesta: "));
   Serial.println(response.message);
-
-  Serial.println("Esperando 10 segundos para la próxima solicitud...");
-  delay(1000 * 10);
 }
 
 void loop() {
-  if (isConnectedWifi() == true) sendMessage();
+  if (!isConnectedWifi()) return;
+  unsigned long now = millis();
+  if (now - lastSend >= INTERVAL) {
+    lastSend = now;
+    sendMessage();
+  }
 }
