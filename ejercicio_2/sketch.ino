@@ -3,8 +3,8 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
-const String WIFI_NAME = "Wokwi-GUEST";
-const String WIFI_PASSWORD = "";
+const char* WIFI_NAME = "Wokwi-GUEST";
+const char* WIFI_PASSWORD = "";
 
 class NtfyResponse {
 public:
